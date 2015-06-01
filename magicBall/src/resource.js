@@ -1,12 +1,12 @@
 var res = {
-    bg_png : "res/bg.png",
-    ball_png : "res/ball.png",
-    bottle_png :"res/bottle.png",
-    vsh:"res/Shaders/mix.vsh",
-    fsh:"res/Shaders/mix.fsh",
+    bg_png: "res/bg.png",
+    ball_png: "res/ball.png",
+    bottle_png: "res/bottle.png",
+    vsh: "res/Shaders/mix.vsh",
+    fsh: "res/Shaders/mix.fsh",
 
-    vsh2:"res/Shaders/example_Outline.vsh",
-    fsh2:"res/Shaders/example_Outline.fsh"
+    vsh2: "res/Shaders/last.vsh",
+    fsh2: "res/Shaders/last.fsh"
 };
 
 var g_resources = [];

@@ -6,9 +6,6 @@ varying vec4 v_fragmentColor;
 varying vec2 v_texCoord;                                     
 uniform sampler2D u_texture;    
                     
-
-
-
 uniform vec3 u_outlineColor;
 uniform float u_threshold;
 uniform float u_radius;
