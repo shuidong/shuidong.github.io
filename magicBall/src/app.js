@@ -61,7 +61,7 @@ var StageLayer = cc.Layer.extend({
                 this.shader.updateUniforms();
 
                 var glProgram_state = cc.GLProgramState.getOrCreateWithGLProgram(this.shader);
-                glProgram_state.setUniformFloat("u_alpha_value", 0.19);
+                glProgram_state.setUniformFloat("u_alpha_value", gameCfg.alphaThold);
                 glProgram_state.setUniformFloat("u_color_value", 0.0);
                 //this.sprite.setGLProgramState(glProgram_state);
 
@@ -79,7 +79,7 @@ var StageLayer = cc.Layer.extend({
                 this.shader.updateUniforms();
                 this.shader.use();
 
-                this.shader.setUniformLocationWith1f(this.shader.getUniformLocationForName('u_alpha_value'), 0.19);//0.25
+                this.shader.setUniformLocationWith1f(this.shader.getUniformLocationForName('u_alpha_value'), gameCfg.alphaThold);//0.25
                 this.shader.setUniformLocationWith1f(this.shader.getUniformLocationForName('u_color_value'), 0.0);
 
                 //setting for mainTex
@@ -143,11 +143,16 @@ var StageLayer = cc.Layer.extend({
         //cc.log("@debug: m_color=" +m_color );
 
         var _shape = new cp.CircleShape(body, radius, cp.v(0, 0));
-        _shape.setCollisionType(m_color);
+        _shape.setCollisionType(-1);
 
         var circle = this.space.addShape(_shape);
         circle.setElasticity(0);
         circle.setFriction(1);//1
+
+        var _sensor = new cp.CircleShape(body, radius * gameCfg.sensorScale, cp.v(0, 0));
+        this.space.addShape(_sensor);
+        _sensor.setSensor(true);
+        _sensor.setCollisionType(m_color);
 
         var sp = new cc.Sprite(res.ball_png);
         sp.setAnchorPoint(0.5, 0.5);
@@ -167,13 +172,18 @@ var StageLayer = cc.Layer.extend({
 
     setupDebugNode: function () {
         // debug only
-        this._debugNode = new cc.PhysicsDebugNode(this.space);
-        this._debugNode.visible = gameCfg.debugFlg;
-        this.addChild(this._debugNode, gameCfg.layer_phyDebug);
+        if(gameCfg.debugFlg) {
+            this._debugNode = new cc.PhysicsDebugNode(this.space);
+            this._debugNode.visible = gameCfg.debugFlg;
+            this.addChild(this._debugNode, gameCfg.layer_phyDebug);            
+        }
 
-        this._lineDebugNode = new cc.DrawNode();
-        this._lineDebugNode.visible = gameCfg.debugFlg;
-        this.addChild(this._lineDebugNode, gameCfg.layer_lineDebug);
+        if(gameCfg.lineDebug){
+            this._lineDebugNode = new cc.DrawNode();
+            this._lineDebugNode.visible = gameCfg.lineDebug;
+            this.addChild(this._lineDebugNode, gameCfg.layer_lineDebug);
+        }
+        
     },
 
     doColor: function (clo) {
@@ -217,7 +227,7 @@ var StageLayer = cc.Layer.extend({
     update: function (dt) {
         this.space.step(dt);
         
-        if(gameCfg.debugFlg && this._lineDebugNode != undefined){
+        if(gameCfg.lineDebug && this._lineDebugNode != undefined){
             var root = this;
             this._lineDebugNode.clear();
             ballMgr.doForAllABs(function(kk){
@@ -257,7 +267,7 @@ var StageLayer = cc.Layer.extend({
         cc.log("@debug: begin setupWorld");
 
         this.space = new cp.Space();
-        if(gameCfg.debugFlg) this.setupDebugNode();
+        this.setupDebugNode();
 
         this.space.iterations = 60;
         this.space.gravity = cp.v(0, -98);
@@ -335,27 +345,23 @@ var StageLayer = cc.Layer.extend({
         this.installPosLine(pos8);
         this.installPosLine(pos9);
 
-        for (var i = 1; i <= 10; i++) {
+        for (var i = 1; i <= gameCfg.initBallCount; i++) {
             this.addNewBall({x: this.size.width / 2, y: this.size.height * 0.8}, gameCfg.ballR);
         }
 
         for(var tt = 0; tt < 4; tt++){
-            this.space.addCollisionHandler(tt, tt,
-                        this.collisionBegin.bind(this),
-                        this.collisionPre.bind(this),
-                        this.collisionPost.bind(this),
-                        this.collisionSeparate.bind(this) );
+            this.space.addCollisionHandler(tt, tt, null, this.xcollisionPre, null, this.xcollisionSeparate);
         }
         
     },
 
     onExit : function() {
-        cp.spaceRemoveCollisionHandler( this.space, 0, 1, 2, 3 );
+        //TODO cp.spaceRemoveCollisionHandler( this.space, 0, 1, 2, 3 );
         cp.spaceFree( this.space );
         StageLayer.prototype.onExit.call(this);
     },
 
-    collisionBegin : function ( arbiter, space ) {
+    xcollisionBegin : function ( arbiter, space ) {
         //cc.log('@debug :collision begin');
         //var bodies = cp.arbiterGetBodies( arbiter );
         var shapes = arbiter.getShapes();
@@ -365,22 +371,30 @@ var StageLayer = cc.Layer.extend({
         if(bodyA === undefined || bodyB === undefined){
             //debugger;
             cc.log("@warning: found a bid equals undefined.");
-            return;
+            return true;
         }
         ballMgr.insertAB(bodyA, bodyB);
         return true;
     },
 
-    collisionPre : function ( arbiter, space ) {
-        //cc.log('@debug :collision pre');
+    xcollisionPre : function ( arbiter, space ) {
+        var shapes = arbiter.getShapes();
+
+        var bodyA = shapes[0].body["bid"];
+        var bodyB = shapes[1].body["bid"];
+        if(bodyA === undefined || bodyB === undefined){
+            //debugger;
+            cc.log("@warning: found a bid equals undefined.");
+            return true;
+        }
+        ballMgr.insertAB(bodyA, bodyB);
         return true;
     },
 
-    collisionPost : function ( arbiter, space ) {
-        //cc.log('@debug :collision post');
+    xcollisionPost : function ( arbiter, space ) {
     },
 
-    collisionSeparate : function ( arbiter, space ) {
+    xcollisionSeparate : function ( arbiter, space ) {
         //cc.log('@debug :collision separate');
         var shapes = arbiter.getShapes();
 
