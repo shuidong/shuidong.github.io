@@ -1,19 +1,20 @@
-
 var StageLayer = cc.Layer.extend({
-    backGround: null,//±≥æ∞Õº∆¨
+    backGround: null,//ËÉåÊôØÂõæÁâá
     bottlePng: null,
     //world: null,
     size: null,//
-    space: null,//ŒÔ¿Ì ¿ΩÁ
+    space: null,//Áâ©ÁêÜ‰∏ñÁïå
     _debugNode: null,
+    _lineDebugNode:null,
 
-    renderTexture: null,//”√”⁄≥‰µ±¡Ÿ ±ªÊ÷∆µƒª∫≥Â«¯ √ø¥Œ∂‘…´«ÚΩ¯––≈˙¡øªÊ÷∆
-    mainTexture: null,//Ω´∂‡÷÷«ÚÃÂµƒ‰÷»æΩ·π˚‘Ÿ∫œ≥…µΩ’‚¿Ô
+    renderTexture: null,//Áî®‰∫éÂÖÖÂΩì‰∏¥Êó∂ÁªòÂà∂ÁöÑÁºìÂÜ≤Âå∫ ÊØèÊ¨°ÂØπËâ≤ÁêÉËøõË°åÊâπÈáèÁªòÂà∂
+    mainTexture: null,//Â∞ÜÂ§öÁßçÁêÉ‰ΩìÁöÑÊ∏≤ÊüìÁªìÊûúÂÜçÂêàÊàêÂà∞ËøôÈáå
 
     shader: null,
     mainShader: null,
 
-    balls: null,//«ÚÃÂºØ∫œπ‹¿Ì
+    //balls: null,//ÁêÉ‰ΩìÈõÜÂêàÁÆ°ÁêÜ
+    //ballMgr : null,
 
     ctor: function () {
         this._super();
@@ -24,7 +25,7 @@ var StageLayer = cc.Layer.extend({
             x: this.size.width / 2,
             y: this.size.height / 2
         });
-        this.addChild(this.backGround, 0);
+        this.addChild(this.backGround, gameCfg.layer_bkGround);
 
         //add the bottle
         this.bottlePng = new cc.Sprite(res.bottle_png);
@@ -34,9 +35,10 @@ var StageLayer = cc.Layer.extend({
         });
         this.bottlePng.anchorX = 0;
         this.bottlePng.anchorY = 0;
-        this.addChild(this.bottlePng, 2);
+        this.addChild(this.bottlePng, gameCfg.layer_bound);
 
-        this.balls = new Array();
+        //this.balls = new Array();
+        //this.ballMgr = new ballMgr();
 
         this.setupWorld();
 
@@ -52,40 +54,60 @@ var StageLayer = cc.Layer.extend({
     setupGL: function () {
         //debugger;
         if ('opengl' in cc.sys.capabilities) {
-            var t = 0;
-            this.shader = new cc.GLProgram(res.vsh, res.fsh);
-            this.shader.addAttribute(cc.ATTRIBUTE_NAME_POSITION, cc.VERTEX_ATTRIB_POSITION);
-            this.shader.addAttribute(cc.ATTRIBUTE_NAME_TEX_COORD, cc.VERTEX_ATTRIB_TEX_COORDS);
-            this.shader.addAttribute(cc.ATTRIBUTE_NAME_COLOR, cc.VERTEX_ATTRIB_COLOR);
+            //var t = 0;
+            if(cc.sys.isNative){
+                this.shader = new cc.GLProgram(res.vsh, res.fsh);
+                this.shader.link();
+                this.shader.updateUniforms();
 
-            this.shader.link();
-            this.shader.updateUniforms();
-            this.shader.use();
+                var glProgram_state = cc.GLProgramState.getOrCreateWithGLProgram(this.shader);
+                glProgram_state.setUniformFloat("u_alpha_value", 0.19);
+                glProgram_state.setUniformFloat("u_color_value", 0.0);
+                //this.sprite.setGLProgramState(glProgram_state);
 
-            this.shader.setUniformLocationWith1f(this.shader.getUniformLocationForName('u_alpha_value'), 0.19);//0.25
-            this.shader.setUniformLocationWith1f(this.shader.getUniformLocationForName('u_color_value'), 0.0);
+                this.mainShader = new cc.GLProgram(res.vsh2, res.fsh2);
+                this.mainShader.link();
+                this.mainShader.updateUniforms();
+            }
+            else{
+                this.shader = new cc.GLProgram(res.vsh, res.fsh);
+                this.shader.addAttribute(cc.ATTRIBUTE_NAME_POSITION, cc.VERTEX_ATTRIB_POSITION);
+                this.shader.addAttribute(cc.ATTRIBUTE_NAME_TEX_COORD, cc.VERTEX_ATTRIB_TEX_COORDS);
+                this.shader.addAttribute(cc.ATTRIBUTE_NAME_COLOR, cc.VERTEX_ATTRIB_COLOR);
 
+                this.shader.link();
+                this.shader.updateUniforms();
+                this.shader.use();
 
-//setting for mainTex
-            this.mainShader = new cc.GLProgram(res.vsh2, res.fsh2);
-            this.mainShader.addAttribute(cc.ATTRIBUTE_NAME_POSITION, cc.VERTEX_ATTRIB_POSITION);
-            this.mainShader.addAttribute(cc.ATTRIBUTE_NAME_TEX_COORD, cc.VERTEX_ATTRIB_TEX_COORDS);
-            this.mainShader.addAttribute(cc.ATTRIBUTE_NAME_COLOR, cc.VERTEX_ATTRIB_COLOR);
+                this.shader.setUniformLocationWith1f(this.shader.getUniformLocationForName('u_alpha_value'), 0.19);//0.25
+                this.shader.setUniformLocationWith1f(this.shader.getUniformLocationForName('u_color_value'), 0.0);
 
-            this.mainShader.link();
-            this.mainShader.updateUniforms();
-            this.mainShader.use();
+                //setting for mainTex
+                this.mainShader = new cc.GLProgram(res.vsh2, res.fsh2);
+                this.mainShader.addAttribute(cc.ATTRIBUTE_NAME_POSITION, cc.VERTEX_ATTRIB_POSITION);
+                this.mainShader.addAttribute(cc.ATTRIBUTE_NAME_TEX_COORD, cc.VERTEX_ATTRIB_TEX_COORDS);
+                this.mainShader.addAttribute(cc.ATTRIBUTE_NAME_COLOR, cc.VERTEX_ATTRIB_COLOR);
 
-            this.mainShader.setUniformLocationWith1f(this.mainShader.getUniformLocationForName('u_threshold'), 1.75);
-            this.mainShader.setUniformLocationWith3f(this.mainShader.getUniformLocationForName('u_outlineColor'), 0 / 255, 255 / 255, 0 / 255);
+                this.mainShader.link();
+                this.mainShader.updateUniforms();
+                this.mainShader.use();
+            }
 ///////////////
         }
 
         this.mainTexture = new cc.RenderTexture(this.size.width, this.size.height, cc.Texture2D.PIXEL_FORMAT_RGBA4444);//PIXEL_FORMAT_RGBA4444
-        this.mainTexture.getSprite().shaderProgram = this.mainShader;
+        
+        
+        if(cc.sys.isNative){
+            var glProgram_state = cc.GLProgramState.getOrCreateWithGLProgram(this.mainShader);
+            this.mainTexture.getSprite().setGLProgramState(glProgram_state);
+        }else{
+            this.mainTexture.getSprite().shaderProgram = this.mainShader;
+        }
+
         this.mainTexture.setAnchorPoint(cc.p(0.5, 0.5));
         this.mainTexture.setPosition(this.size.width / 2, this.size.height / 2);
-        this.addChild(this.mainTexture, 6);
+        this.addChild(this.mainTexture, gameCfg.layer_balls);
 
         this.renderTexture = new cc.RenderTexture(this.size.width, this.size.height, cc.Texture2D.PIXEL_FORMAT_RGBA4444);//PIXEL_FORMAT_RGBA8888
         this.renderTexture.setPosition(this.size.width / 2.0, this.size.height / 2.0);
@@ -101,39 +123,57 @@ var StageLayer = cc.Layer.extend({
                     var pp = event.getLocation();
                     //cc.log("@debug: click x=" + pp.x + "; y=" + pp.y);
                     if (pp.y < root.size.height * 0.6)return;
-                    root.addNewBall(pp, ballR);
+                    root.addNewBall(pp, gameCfg.ballR);
                 }
             }, this);
     },
 
     addNewBall: function (pos, r) {
         var radius = r;
-        var mass = 100;
+        var mass = 1;
         var body = this.space.addBody(new cp.Body(mass, cp.momentForCircle(mass, 0, radius, cp.v(0, 0))));
+        body["bid"] = ballMgr.getNextBallID();
         body.setPos(cp.v(pos.x, pos.y));
-        var circle = this.space.addShape(new cp.CircleShape(body, radius, cp.v(0, 0)));
-        circle.setElasticity(0);
-        circle.setFriction(1);//1
-
-        var sp = new cc.Sprite(res.ball_png);
-        sp.setPosition(pos.x, pos.y);
-        sp.setScale(ballScale);//1.3
-        sp.retain();
-
+        
         var m_color = 0;
         var tmp = Math.random();
         if (tmp >= 0.25) m_color = 1;
         if (tmp >= 0.5) m_color = 2;
         if (tmp >= 0.75) m_color = 3;
         //cc.log("@debug: m_color=" +m_color );
-        this.balls.push({x: pos.x, y: pos.y, z: sp, b: body, c: m_color});
+
+        var _shape = new cp.CircleShape(body, radius, cp.v(0, 0));
+        _shape.setCollisionType(m_color);
+
+        var circle = this.space.addShape(_shape);
+        circle.setElasticity(0);
+        circle.setFriction(1);//1
+
+        var sp = new cc.Sprite(res.ball_png);
+        sp.setAnchorPoint(0.5, 0.5);
+        sp.setPosition(pos.x, pos.y);
+        sp.setScale(gameCfg.ballScale);//1.3
+        sp.retain();
+
+        //ballMgr.
+        var tmpBall = new ballClass();
+        tmpBall.z = sp;
+        tmpBall.b = body;
+        tmpBall.c = m_color;
+
+        ballMgr.addBall(tmpBall);
+        //this.balls.push({z: sp, b: body, c: m_color});//x: pos.x, y: pos.y,
     },
 
     setupDebugNode: function () {
         // debug only
         this._debugNode = new cc.PhysicsDebugNode(this.space);
-        this._debugNode.visible = true;
-        this.addChild(this._debugNode, 5);
+        this._debugNode.visible = gameCfg.debugFlg;
+        this.addChild(this._debugNode, gameCfg.layer_phyDebug);
+
+        this._lineDebugNode = new cc.DrawNode();
+        this._lineDebugNode.visible = gameCfg.debugFlg;
+        this.addChild(this._lineDebugNode, gameCfg.layer_lineDebug);
     },
 
     doColor: function (clo) {
@@ -141,33 +181,33 @@ var StageLayer = cc.Layer.extend({
         this.renderTexture.clear(0, 0, 0, 0);
         this.renderTexture.begin();
 
-        for (var j = 0; j < this.balls.length; j++) {
-            var tmp = this.balls[j];
-            var tsp = tmp.z;
-//debugger;
-            if (tmp.c != clo)continue;
+        ballMgr.forAllBalls(function(tmp){
+            if (tmp.c != clo)return;
             var poss = tmp.b.p;
-            tsp.setAnchorPoint(0.5, 0.5);
+            
+            var tsp = tmp.z;
             tsp.setPosition(poss.x, poss.y);
             tsp.visit();
-        }
+        });
 
         this.renderTexture.end();
 
         var xsprite = new cc.Sprite(this.renderTexture.getSprite().texture);
         xsprite.setAnchorPoint(cc.p(0.5, 0.5));
         xsprite.setPosition(this.size.width / 2, this.size.height / 2);
-        xsprite.shaderProgram = this.shader;
         xsprite.setScaleY(-1);
-
-        this.shader.use();
-        this.shader.setUniformLocationWith1f(this.shader.getUniformLocationForName('u_color_value'), clo);
-        this.shader.updateUniforms();
-
-
-        this.mainShader.use();
-        this.mainShader.setUniformLocationWith1f(this.mainShader.getUniformLocationForName('u_radius'), 0.8);
-        this.mainShader.updateUniforms();
+        if(cc.sys.isNative){
+            var glProgram_state3 = cc.GLProgramState.getOrCreateWithGLProgram(this.shader);
+            xsprite.setGLProgramState(glProgram_state3);
+            xsprite.getGLProgramState().setUniformFloat("u_color_value", clo);
+        }else{
+            xsprite.shaderProgram = this.shader;
+            this.shader.use();
+            this.shader.setUniformLocationWith1f(this.shader.getUniformLocationForName('u_color_value'), clo);
+            this.shader.updateUniforms();
+            //this.mainShader.use();
+            //this.mainShader.updateUniforms();
+        }
 
         this.mainTexture.begin();
         xsprite.visit();
@@ -176,6 +216,19 @@ var StageLayer = cc.Layer.extend({
 
     update: function (dt) {
         this.space.step(dt);
+        
+        if(gameCfg.debugFlg && this._lineDebugNode != undefined){
+            var root = this;
+            this._lineDebugNode.clear();
+            ballMgr.doForAllABs(function(kk){
+                var ids = kk.split("_");
+                var bodya = ballMgr.getBallByID(ids[0]);
+                var bodyb = ballMgr.getBallByID(ids[1]);
+
+                root._lineDebugNode.drawSegment(bodya.b.p, bodyb.b.p, 2, cc.color(0, 0, 0, 255));
+            });
+            
+        }
 
         this.mainTexture.clear(0, 0, 0, 0);
 
@@ -204,13 +257,12 @@ var StageLayer = cc.Layer.extend({
         cc.log("@debug: begin setupWorld");
 
         this.space = new cp.Space();
-        if(debugFlg) this.setupDebugNode();
+        if(gameCfg.debugFlg) this.setupDebugNode();
 
         this.space.iterations = 60;
-        this.space.gravity = cp.v(0, -110);
+        this.space.gravity = cp.v(0, -98);
         this.space.sleepTimeThreshold = 0.5;
         this.space.collisionSlop = 0.5;
-        this.space.sleepTimeThreshold = 0.5;
 
         var pos = new Array(
             {x: 460.000, y: 957.500},
@@ -284,8 +336,63 @@ var StageLayer = cc.Layer.extend({
         this.installPosLine(pos9);
 
         for (var i = 1; i <= 10; i++) {
-            this.addNewBall({x: this.size.width / 2, y: this.size.height * 0.8}, ballR);
+            this.addNewBall({x: this.size.width / 2, y: this.size.height * 0.8}, gameCfg.ballR);
         }
+
+        for(var tt = 0; tt < 4; tt++){
+            this.space.addCollisionHandler(tt, tt,
+                        this.collisionBegin.bind(this),
+                        this.collisionPre.bind(this),
+                        this.collisionPost.bind(this),
+                        this.collisionSeparate.bind(this) );
+        }
+        
+    },
+
+    onExit : function() {
+        cp.spaceRemoveCollisionHandler( this.space, 0, 1, 2, 3 );
+        cp.spaceFree( this.space );
+        StageLayer.prototype.onExit.call(this);
+    },
+
+    collisionBegin : function ( arbiter, space ) {
+        //cc.log('@debug :collision begin');
+        //var bodies = cp.arbiterGetBodies( arbiter );
+        var shapes = arbiter.getShapes();
+
+        var bodyA = shapes[0].body["bid"];
+        var bodyB = shapes[1].body["bid"];
+        if(bodyA === undefined || bodyB === undefined){
+            //debugger;
+            cc.log("@warning: found a bid equals undefined.");
+            return;
+        }
+        ballMgr.insertAB(bodyA, bodyB);
+        return true;
+    },
+
+    collisionPre : function ( arbiter, space ) {
+        //cc.log('@debug :collision pre');
+        return true;
+    },
+
+    collisionPost : function ( arbiter, space ) {
+        //cc.log('@debug :collision post');
+    },
+
+    collisionSeparate : function ( arbiter, space ) {
+        //cc.log('@debug :collision separate');
+        var shapes = arbiter.getShapes();
+
+        var bodyA = shapes[0].body["bid"];
+        var bodyB = shapes[1].body["bid"];
+
+        if(bodyA === undefined || bodyB === undefined){
+            //debugger;
+            cc.log("@warning: found a bid equals undefined(remove).");
+            return;
+        }
+        ballMgr.removeAB(bodyA, bodyB);        
     }
 });
 

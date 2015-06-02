@@ -7,6 +7,8 @@
     "jsList" : [
         "src/resource.js",
         "src/config.js",
+        "src/ballClass.js",
+        "src/ballMgr.js",
         "src/app.js"
     ]
 }

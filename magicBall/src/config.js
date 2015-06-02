@@ -4,6 +4,16 @@
 var GRABABLE_MASK_BIT = 1 << 31;
 var NOT_GRABABLE_MASK = ~GRABABLE_MASK_BIT;
 
-var ballR = 25;//30 Ð¡ÇòµÄÎïÀí°ë¾¶
-var ballScale = 1.2;//Ð¡ÇòËØ²ÄµÄ·Å´ó±ÈÂÊ
-var debugFlg = false;//±êÖ¾Î»ÓÃÓÚ ÏÔÊ¾/Òþ²Ø ÎïÀíÒýÇæµ÷ÊÔÍ¼
+var gameCfg = gameCfg || {
+        ballR : 20,//30 å°çƒçš„ç‰©ç†åŠå¾„
+        ballScale : 1.0,//å°çƒç´ æçš„æ”¾å¤§æ¯”çŽ‡ 1.2
+        debugFlg : true,//æ ‡å¿—ä½ç”¨äºŽ æ˜¾ç¤º/éšè— ç‰©ç†å¼•æ“Žè°ƒè¯•å›¾
+
+        layer_bkGround : 0,
+        layer_phyDebug : 10,
+        layer_balls : 20,
+        layer_bound : 30,
+        layer_lineDebug : 40
+
+    };
+
