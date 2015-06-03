@@ -47,6 +47,8 @@ var StageLayer = cc.Layer.extend({
 
         this.setupGL();
 
+        this.setupMenu();
+
         this.scheduleUpdate();
         return true;
     },
@@ -114,6 +116,61 @@ var StageLayer = cc.Layer.extend({
         this.renderTexture.retain();
     },
 
+    onMenuAddBallClicked: function(sender) {
+        //cc.log('@debug: onMenuAddBallClicked');
+        this.addNewBall({x: this.size.width / 2, y: this.size.height * 0.7}, gameCfg.ballR);
+        this.addNewBall({x: this.size.width / 2 - 20, y: this.size.height * 0.6}, gameCfg.ballR);
+        this.addNewBall({x: this.size.width / 2 + 20, y: this.size.height * 0.8}, gameCfg.ballR);
+    },
+
+    onMenuDm1Clicked: function(sender) {
+        if(gameCfg.lineDebug){//close debug mode
+            this._lineDebugNode.visible = false;
+        }else{
+            this._lineDebugNode.visible = true;
+        }
+        gameCfg.lineDebug = !gameCfg.lineDebug;
+    },
+
+    onMenuDm2Clicked: function(sender) {
+        if(gameCfg.debugFlg){//close debug mode
+            this._debugNode.visible = false;
+        }else{
+            this._debugNode.visible = true;
+        }
+        gameCfg.debugFlg = !gameCfg.debugFlg;        
+    },
+
+    setupMenu : function(){
+        var ctrlMenu = new cc.Menu();
+        ctrlMenu.x = 0;
+        ctrlMenu.y = 0;
+        this.addChild(ctrlMenu, gameCfg.layer_menu);
+        
+        var addBallTxt = new cc.LabelTTF("click here to add balls", "Arial", 40);
+        var itemAddBall = new cc.MenuItemLabel(addBallTxt, this.onMenuAddBallClicked, this);
+        itemAddBall.x = this.size.width / 2;
+        itemAddBall.y = this.size.height - 50;
+        ctrlMenu.addChild(itemAddBall);
+        
+        var dmode1Txt = new cc.LabelTTF("debugMode(link line ON/OFF)", "Arial", 30);
+        var itemDmode1 = new cc.MenuItemLabel(dmode1Txt, this.onMenuDm1Clicked, this);
+        itemDmode1.x = this.size.width / 2;
+        itemDmode1.y = this.size.height - 100;
+        ctrlMenu.addChild(itemDmode1);
+
+        var dmode2Txt = new cc.LabelTTF("debugMode(body visiable ON/OFF)", "Arial", 30);
+        var itemDmode2 = new cc.MenuItemLabel(dmode2Txt, this.onMenuDm2Clicked, this);
+        itemDmode2.x = this.size.width / 2;
+        itemDmode2.y = this.size.height - 150;
+        ctrlMenu.addChild(itemDmode2);
+
+        var introTxt = new cc.LabelTTF("HowToPlay=click the balls' chain(balls' count >= 3) to destory them!", "Arial", 20);
+        introTxt.x = this.size.width / 2;
+        introTxt.y = this.size.height - 200;
+        this.addChild(introTxt, gameCfg.layer_menu);
+    },
+
     setupClickEvent: function () {
         var root = this;
         if ('mouse' in cc.sys.capabilities)
@@ -122,8 +179,24 @@ var StageLayer = cc.Layer.extend({
                 onMouseDown: function (event) {
                     var pp = event.getLocation();
                     //cc.log("@debug: click x=" + pp.x + "; y=" + pp.y);
-                    if (pp.y < root.size.height * 0.6)return;
-                    root.addNewBall(pp, gameCfg.ballR);
+                    if (true || pp.y < root.size.height * 0.6){
+                        ballMgr.clickBallID = ballMgr.getBallIDByPos(pp);
+                        // cc.log("@debug: ball clicked id=" + ballMgr.clickBallID);
+                        if(-1 == ballMgr.clickBallID)return;//如果没有击中小球则不处理
+                        
+                        var ballsSet = [];
+                        var vistedFlgs = [];
+
+                        //先加入最原始的结点
+                        ballsSet[ballMgr.clickBallID] = ballMgr.clickBallID;
+                        ballMgr.BFSForTree(ballMgr.clickBallID, ballsSet, vistedFlgs);
+
+                        var nodeCount = util.getArraySize(ballsSet);
+                        //cc.log('@debug: nodeCount='+ nodeCount);
+                        ballMgr.destoryBalls(ballsSet, root.space, nodeCount >= gameCfg.minNodeCount);
+                        return;
+                    };
+                    //root.addNewBall(pp, gameCfg.ballR);
                 }
             }, this);
     },
@@ -165,6 +238,8 @@ var StageLayer = cc.Layer.extend({
         tmpBall.z = sp;
         tmpBall.b = body;
         tmpBall.c = m_color;
+        tmpBall.sensor = _sensor;
+        tmpBall.sshape = _shape;
 
         ballMgr.addBall(tmpBall);
         //this.balls.push({z: sp, b: body, c: m_color});//x: pos.x, y: pos.y,
@@ -172,17 +247,18 @@ var StageLayer = cc.Layer.extend({
 
     setupDebugNode: function () {
         // debug only
-        if(gameCfg.debugFlg) {
-            this._debugNode = new cc.PhysicsDebugNode(this.space);
-            this._debugNode.visible = gameCfg.debugFlg;
-            this.addChild(this._debugNode, gameCfg.layer_phyDebug);            
-        }
-
-        if(gameCfg.lineDebug){
-            this._lineDebugNode = new cc.DrawNode();
-            this._lineDebugNode.visible = gameCfg.lineDebug;
-            this.addChild(this._lineDebugNode, gameCfg.layer_lineDebug);
-        }
+        this._debugNode = new cc.PhysicsDebugNode(this.space);
+        this._debugNode.visible = gameCfg.debugFlg;
+        this.addChild(this._debugNode, gameCfg.layer_phyDebug); 
+        // if(gameCfg.debugFlg) {
+                       
+        // }
+        this._lineDebugNode = new cc.DrawNode();
+        this._lineDebugNode.visible = gameCfg.lineDebug;
+        this.addChild(this._lineDebugNode, gameCfg.layer_lineDebug);
+        // if(gameCfg.lineDebug){
+            
+        // }
         
     },
 
@@ -248,6 +324,7 @@ var StageLayer = cc.Layer.extend({
         this.doColor(2);
         this.doColor(3);
 
+        effMgr.update(dt);
     },
 
     installPosLine: function (arr) {
@@ -345,8 +422,9 @@ var StageLayer = cc.Layer.extend({
         this.installPosLine(pos8);
         this.installPosLine(pos9);
 
-        for (var i = 1; i <= gameCfg.initBallCount; i++) {
+        for (var i = 1; i <= gameCfg.initBallCount / 2; i++) {
             this.addNewBall({x: this.size.width / 2, y: this.size.height * 0.8}, gameCfg.ballR);
+            this.addNewBall({x: this.size.width / 2 + 20, y: this.size.height * 0.5}, gameCfg.ballR);
         }
 
         for(var tt = 0; tt < 4; tt++){
@@ -366,11 +444,11 @@ var StageLayer = cc.Layer.extend({
         //var bodies = cp.arbiterGetBodies( arbiter );
         var shapes = arbiter.getShapes();
 
-        var bodyA = shapes[0].body["bid"];
-        var bodyB = shapes[1].body["bid"];
-        if(bodyA === undefined || bodyB === undefined){
+        var bodyA = shapes[0].body;
+        var bodyB = shapes[1].body;
+        if(bodyA["bid"] === undefined || bodyB["bid"] === undefined){
             //debugger;
-            cc.log("@warning: found a bid equals undefined.");
+            //cc.log("@warning: found a bid equals undefined.");
             return true;
         }
         ballMgr.insertAB(bodyA, bodyB);
@@ -380,11 +458,11 @@ var StageLayer = cc.Layer.extend({
     xcollisionPre : function ( arbiter, space ) {
         var shapes = arbiter.getShapes();
 
-        var bodyA = shapes[0].body["bid"];
-        var bodyB = shapes[1].body["bid"];
-        if(bodyA === undefined || bodyB === undefined){
+        var bodyA = shapes[0].body;
+        var bodyB = shapes[1].body;
+        if(bodyA["bid"] === undefined || bodyB["bid"] === undefined){
             //debugger;
-            cc.log("@warning: found a bid equals undefined.");
+            //cc.log("@warning: found a bid equals undefined.");
             return true;
         }
         ballMgr.insertAB(bodyA, bodyB);
@@ -398,12 +476,12 @@ var StageLayer = cc.Layer.extend({
         //cc.log('@debug :collision separate');
         var shapes = arbiter.getShapes();
 
-        var bodyA = shapes[0].body["bid"];
-        var bodyB = shapes[1].body["bid"];
+        var bodyA = shapes[0].body;
+        var bodyB = shapes[1].body;
 
-        if(bodyA === undefined || bodyB === undefined){
+        if(bodyA["bid"] === undefined || bodyB["bid"] === undefined){
             //debugger;
-            cc.log("@warning: found a bid equals undefined(remove).");
+            //cc.log("@warning: found a bid equals undefined(remove).");
             return;
         }
         ballMgr.removeAB(bodyA, bodyB);        
