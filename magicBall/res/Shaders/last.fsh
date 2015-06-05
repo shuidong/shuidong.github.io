@@ -13,26 +13,34 @@ uniform float u_radius;
 void main()
 {
     ///////////
-    float rx = 1.0/640.0;
-    float ry = 1.0/960.0;
+    float rx = 1.0/640.0 * 1.0;
+    float ry = 1.0/960.0 * 1.0;
 
-    vec4 texColor1 = texture2D(u_texture, vec2(v_texCoord.x - rx, v_texCoord.y));  
-    vec4 texColor2 = texture2D(u_texture, vec2(v_texCoord.x + rx, v_texCoord.y));  
-
-    vec4 texColor3 = texture2D(u_texture, vec2(v_texCoord.x, v_texCoord.y + ry));  
-    vec4 texColor4 = texture2D(u_texture, vec2(v_texCoord.x, v_texCoord.y + ry));  
+    float radius = u_radius;
+    vec4 accum = vec4(0.0);
+    vec4 normal = vec4(0.0);
+    normal = texture2D(u_texture, vec2(v_texCoord.x, v_texCoord.y));
     
-    if(
+    accum += texture2D(u_texture, vec2(v_texCoord.x - rx, v_texCoord.y - ry));
+    accum += texture2D(u_texture, vec2(v_texCoord.x + rx, v_texCoord.y - ry));
+    accum += texture2D(u_texture, vec2(v_texCoord.x + rx, v_texCoord.y + ry));
+    accum += texture2D(u_texture, vec2(v_texCoord.x - rx, v_texCoord.y + ry));
+    
+    accum *= 1.1;
+    accum.rgb = vec3(201.0/255.0, 186.0/255.0, 131.0/255.0) * accum.a;
+    accum.rgb = vec3(0, 0, 0) * accum.a;
+    
+    normal = ( accum * (1.0 - normal.a)) + (normal * normal.a);
+    
+    gl_FragColor = v_fragmentColor * normal;
 
-    (texColor1.r != texColor2.r && texColor1.g != texColor2.g && texColor1.b != texColor2.b)
+    //if(gl_FragColor.r == 0.0 && gl_FragColor.g == 0.0 && gl_FragColor.b == 0.0){
+      //  gl_FragColor.a = 0.8;    
+    //}
+    
 
-    || 
 
-    (texColor3.r != texColor4.r && texColor3.g != texColor4.g && texColor3.b != texColor4.b)
 
-    ){
-        gl_FragColor = vec4(0, 0, 0, 1);
-    }else{
-        gl_FragColor = texture2D(u_texture, vec2(v_texCoord.x, v_texCoord.y));
-    }
+
+    
 }

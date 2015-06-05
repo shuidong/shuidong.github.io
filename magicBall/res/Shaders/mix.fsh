@@ -20,11 +20,17 @@ void main()
         discard;
     }else{
         float b = 1.0 ;
-
-        if(u_color_value == 0.0)gl_FragColor = vec4(1.0 , 102.0/255.0 , 153.0/255.0 , b); //255 102 153
-        if(u_color_value == 1.0)gl_FragColor = vec4( 153.0/255.0, 1.0 , 51.0/255.0 , b); //15325551
-        if(u_color_value == 2.0)gl_FragColor = vec4( 102.0/255.0, 204.0/255.0 , 1.0 , b); //102 204 255
-        if(u_color_value == 3.0)gl_FragColor = vec4(1.0 , 1.0 , 102.0/255.0 , b); //255255102
+//http://www.missyuan.com/thread-523180-1-1.html
+//130,57,53
+//137,190,178
+//201,186,131
+//222,211,140
+//222,156,83
+//vec4(201.0 / 255.0, 186.0 / 255.0, 131.0 / 255.0, b);
+        if(u_color_value == 0.0)gl_FragColor = vec4(130.0 / 255.0, 57.0 / 255.0, 53.0 / 255.0, b);
+        if(u_color_value == 1.0)gl_FragColor = vec4(137.0 / 255.0, 190.0 / 255.0, 178.0 / 255.0, b);
+        if(u_color_value == 2.0)gl_FragColor = vec4(222.0 / 255.0, 211.0 / 255.0, 140.0 / 255.0, b);
+        if(u_color_value == 3.0)gl_FragColor = vec4(222.0 / 255.0, 156.0 / 255.0, 83.0 / 255.0, b);
         //gl_FragCoord
     }
 }                                                             

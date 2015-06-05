@@ -42,7 +42,6 @@ var StageLayer = cc.Layer.extend({
 
         this.setupWorld();
 
-
         this.setupClickEvent();
 
         this.setupGL();
@@ -346,10 +345,10 @@ var StageLayer = cc.Layer.extend({
         this.space = new cp.Space();
         this.setupDebugNode();
 
-        this.space.iterations = 60;
+        this.space.iterations = 20;//60
         this.space.gravity = cp.v(0, -98);
-        this.space.sleepTimeThreshold = 0.5;
-        this.space.collisionSlop = 0.5;
+        this.space.sleepTimeThreshold = 0.1;//0.5
+        this.space.collisionSlop = 0.1;
 
         var pos = new Array(
             {x: 460.000, y: 957.500},

@@ -9,19 +9,26 @@ effectMgr = function(){
 			if(ball.effectTime <= 0){
 				ball.effectTime = 0;
 				ball.z.setScale(gameCfg.ballScale);
+
+				//ball.sshape.r = gameCfg.ballR;
 				if(ball.destoryCb != undefined){
 					//debugger;
 					ball.destoryCb(ball, ballId);
 				}
 			}else{
 				var currentScale = ball.z.getScale();
-				if(ball.effectTime > gameCfg.effTimeLength/2.0){
-					currentScale -= 0.02;
+				//var currentShapeR = ball.sshape.r;
+
+				if(ball.effectTime > gameCfg.effTimeLength / 2.0){
+					currentScale -= 0.01;
+					//currentShapeR -= 1;
 				}else{
-					currentScale += 0.02;
+					currentScale += 0.01;
+					//currentShapeR += 1;
 				}
 				
-				ball.z.setScale(currentScale);				
+				ball.z.setScale(currentScale);
+				//ball.sshape.r = currentShapeR;
 			}
 			
 		}
